@@ -210,61 +210,51 @@ function nextStep(){
 function showReview(){
     reviewMode = true;
 
-    // Übersicht bauen
-    let reviewHTML = `
+    let gridHTML = `
         <h1>Übersicht deiner Bewertungen</h1>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:15px;margin-bottom:20px;">
     `;
 
     designs.forEach(d => {
-        reviewHTML += `
+        gridHTML += `
             <div style="background:#0f172a;padding:10px;border-radius:10px;">
                 <img src="${d.image}" style="width:100%;height:80px;object-fit:contain;">
-                <div style="margin-top:8px;font-weight:bold;">${ratings[d.name] || 0} ★</div>
+                <div style="margin-top:8px;font-weight:bold;">${ratings[d.name]} ★</div>
             </div>
         `;
     });
 
-    reviewHTML += `</div>
-        <button id="submitBtn">Abschicken</button>
-    `;
+    gridHTML += `</div><button id="submitBtn">Abschicken</button>`;
 
-    appDiv.innerHTML = reviewHTML;
+    appDiv.innerHTML = gridHTML;
 
-    document.getElementById("submitBtn").addEventListener("click", submitSurvey);
+    document.getElementById("submitBtn").onclick = submitSurvey;
 }
-
 
 async function submitSurvey(){
-    try {
 
-        console.log("Sende Daten:", ratings);
+    await addDoc(collection(db, "umfragen"), {
+        name: userName,
+        ratings: ratings,
+        createdAt: serverTimestamp()
+    });
 
-        await addDoc(collection(db, "umfragen"), {
-            ratings: ratings,
-            createdAt: serverTimestamp()
-        });
-
-        appDiv.innerHTML = `
-            <div class="end-screen">
-                <div class="thank-you">Vielen Dank für das Teilnehmen</div>
-                <div class="subtext">
-                    Deine Bewertung wurde erfolgreich gespeichert.
-                </div>
+    appDiv.innerHTML = `
+        <div class="end-screen">
+            <div class="thank-you">Vielen Dank ${userName}!</div>
+            <div class="subtext">
+                Deine Bewertung wurde erfolgreich gespeichert.
             </div>
-        `;
-
-    } catch (error) {
-        console.error("Fehler beim Speichern:", error);
-        alert("Fehler beim Speichern – siehe Konsole (F12)");
-    }
+        </div>
+    `;
 }
-
 
 </script>
 
+
 </body>
 </html>
+
 
 
 
