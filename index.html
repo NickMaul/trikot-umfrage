@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trikot Umfrage</title>
+
+<style>
+/* Dein bestehendes Styling bleibt */
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    background: #0f172a;
+    color: #f1f5f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    width: 95%;
+    max-width: 900px;
+    background: #1e293b;
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    text-align: center;
+}
+
+#designImage {
+    width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    background: #0f172a;
+    padding: 10px;
+    border-radius: 15px;
+    margin-bottom: 15px;
+}
+
+.stars { font-size: 32px; margin-bottom: 15px; }
+.star { color: #475569; cursor: pointer; }
+.star.selected { color: #facc15; }
+
+button {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+}
+
+.end-screen {
+    text-align: center;
+}
+
+.thank-you {
+    font-size: 24px;
+    font-weight: bold;
+}
+.subtext {
+    color: #94a3b8;
+}
+</style>
+</head>
+<body>
+
+<div class="container" id="app">
+    <h1>Trikot Design Umfrage</h1>
+    <h2 id="designTitle"></h2>
+    <img id="designImage">
+    <div class="stars" id="stars"></div>
+    <button id="mainButton" onclick="nextStep()">Weiter</button>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+
+// 🔥 Firebase Imports
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// 🔥 HIER DEINE FIREBASE CONFIG EINSETZEN
+const firebaseConfig = {
+  apiKey: "AIzaSyBC_sQUOccq9MjvAyeCxtDKnjqn9AJGv-M",
+  authDomain: "trikot-umfrage.firebaseapp.com",
+  projectId: "trikot-umfrage",
+  storageBucket: "trikot-umfrage.firebasestorage.app",
+  messagingSenderId: "836580980136",
+  appId: "1:836580980136:web:ec10459578e31e6c8b199d"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const designs = [
+    {name: "Design 1", image: "design1.png"},
+    {name: "Design 2", image: "design2.png"},
+    {name: "Design 3", image: "design3.png"},
+    {name: "Design 4", image: "design4.png"},
+    {name: "Design 5", image: "design5.png"},
+    {name: "Design 6", image: "design6.png"},
+    {name: "Design 7", image: "design7.png"},
+    {name: "Design 8", image: "design8.png"},
+    {name: "Design 9", image: "design9.png"},
+    {name: "Design 10", image: "design10.png"},
+    {name: "Design 11", image: "design11.png"},
+    {name: "Design 12", image: "design12.png"},
+    {name: "Design 13", image: "design13.png"},
+    {name: "Design 14", image: "design14.png"},
+    {name: "Design 15", image: "design15.png"},
+    {name: "Design 16", image: "design16.png"},
+    {name: "Design 17", image: "design17.png"},
+    {name: "Design 18", image: "design18.png"},
+    {name: "Design 19", image: "design19.png"},
+    {name: "Design 20", image: "design20.png"}
+    // Rest einfügen
+];
+
+let currentIndex = 0;
+let ratings = {};
+let reviewMode = false;
+
+const title = document.getElementById("designTitle");
+const image = document.getElementById("designImage");
+const starsContainer = document.getElementById("stars");
+const button = document.getElementById("mainButton");
+const appDiv = document.getElementById("app");
+
+function loadDesign() {
+    const design = designs[currentIndex];
+    title.textContent = design.name;
+    image.src = design.image;
+    starsContainer.innerHTML = "";
+
+    for(let i=1;i<=5;i++){
+        const star = document.createElement("span");
+        star.innerHTML = "★";
+        star.classList.add("star");
+        if(ratings[design.name] >= i){
+            star.classList.add("selected");
+        }
+        star.onclick = () => {
+            ratings[design.name] = i;
+            loadDesign();
+        };
+        starsContainer.appendChild(star);
+    }
+
+    if(currentIndex === designs.length - 1){
+        button.textContent = "Zur Übersicht";
+    }
+}
+
+function nextStep(){
+    const currentName = designs[currentIndex].name;
+    if(!ratings[currentName]){
+        alert("Bitte erst bewerten!");
+        return;
+    }
+
+    if(currentIndex < designs.length - 1){
+        currentIndex++;
+        loadDesign();
+    } else if(!reviewMode){
+        showReview();
+    } else {
+        submitSurvey();
+    }
+}
+
+function showReview(){
+    reviewMode = true;
+    button.textContent = "Abschicken";
+}
+
+async function submitSurvey(){
+
+    // 🔥 Daten an Firebase senden
+    await addDoc(collection(db, "umfragen"), {
+        ratings: ratings,
+        createdAt: serverTimestamp()
+    });
+
+    appDiv.innerHTML = `
+        <div class="end-screen">
+            <div class="thank-you">Vielen Dank für das Teilnehmen</div>
+            <div class="subtext">
+                Am 15.02 erscheint dann nach Auswertung dieser Umfrage der zweite Teil
+                mit den genauen Farben des beliebtesten Designs.
+            </div>
+        </div>
+    `;
+}
+
+loadDesign();
+
+</script>
+</body>
+</html>
