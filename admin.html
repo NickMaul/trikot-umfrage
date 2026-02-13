@@ -115,19 +115,17 @@ async function loadResults(){
     const headerRow = document.getElementById("headerRow");
 
     // Header für Designs
-    // Bewertungen
-    console.log("Ratings for", data.name, data.ratings);
-
     designs.forEach(d => {
-        const td = document.createElement("td");
-        td.textContent = data.ratings[d] !== undefined ? data.ratings[d] : "-";
-        tr.appendChild(td);
+        const th = document.createElement("th");
+        th.textContent = d;
+        headerRow.appendChild(th);
     });
-
 
     // Jede Antwort als Zeile
     querySnapshot.forEach(doc => {
-        const data = doc.data();
+        const data = doc.data(); // <<< Hier data definieren!
+        console.log("Ratings for", data.name, data.ratings); // <<< Debugging
+
         const tr = document.createElement("tr");
 
         // Name
@@ -138,13 +136,14 @@ async function loadResults(){
         // Bewertungen
         designs.forEach(d => {
             const td = document.createElement("td");
-            td.textContent = data.ratings[d] || "-";
+            td.textContent = data.ratings[d] !== undefined ? data.ratings[d] : "-";
             tr.appendChild(td);
         });
 
         tableBody.appendChild(tr);
     });
 }
+
 
 // === Excel Download ===
 document.getElementById("downloadBtn").addEventListener("click", () => {
