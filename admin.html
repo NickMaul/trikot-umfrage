@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trikot Umfrage Admin</title>
+<style>
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    background: #0f172a;
+    color: #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+h1 { margin-bottom: 20px; }
+table {
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 1200px;
+    margin-bottom: 20px;
+}
+th, td {
+    border: 1px solid #475569;
+    padding: 8px 12px;
+    text-align: center;
+}
+th { background: #1e293b; }
+td { background: #0f172a; }
+input, button {
+    padding: 12px;
+    font-size: 16px;
+    margin: 5px;
+    border-radius: 8px;
+    border: none;
+}
+button {
+    cursor: pointer;
+    font-weight: bold;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+}
+</style>
+</head>
+<body>
+
+<h1>Admin Login</h1>
+<div id="loginDiv">
+    <input type="password" id="adminPassword" placeholder="Passwort eingeben">
+    <button id="loginBtn">Login</button>
+</div>
+
+<div id="adminContent" style="display:none;">
+    <h1>Admin Übersicht - Trikot Umfrage</h1>
+    <table id="resultsTable">
+        <thead>
+            <tr id="headerRow">
+                <th>Name</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+    <button id="downloadBtn">Als Excel herunterladen</button>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import * as XLSX from 'https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.mjs';
+
+// === Dein Firebase Config ===
+const firebaseConfig = {
+  apiKey: "AIzaSyBC_sQUOccq9MjvAyeCxtDKnjqn9AJGv-M",
+  authDomain: "trikot-umfrage.firebaseapp.com",
+  projectId: "trikot-umfrage",
+  storageBucket: "trikot-umfrage.firebasestorage.app",
+  messagingSenderId: "836580980136",
+  appId: "1:836580980136:web:ec10459578e31e6c8b199d"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Alle Designs
+const designs = [
+    "Design 1","Design 2","Design 3","Design 4","Design 5","Design 6","Design 7","Design 8","Design 9","Design 10",
+    "Design 11","Design 12","Design 13","Design 14","Design 15","Design 16","Design 17","Design 18","Design 19","Design 20"
+];
+
+// === Admin Passwort ===
+const ADMIN_PASSWORD = "MeinSicheresPasswort123€€€"; //
+
+const loginBtn = document.getElementById("loginBtn");
+loginBtn.addEventListener("click", async () => {
+    const pw = document.getElementById("adminPassword").value;
+    if(pw !== ADMIN_PASSWORD){
+        alert("Falsches Passwort!");
+        return;
+    }
+
+    document.getElementById("loginDiv").style.display = "none";
+    document.getElementById("adminContent").style.display = "block";
+
+    await loadResults();
+});
+
+// === Ergebnisse laden und Tabelle bauen ===
+async function loadResults(){
+    const querySnapshot = await getDocs(collection(db, "umfragen"));
+    const tableBody = document.getElementById("tableBody");
+    const headerRow = document.getElementById("headerRow");
+
+    // Header für Designs
+    designs.forEach(d => {
+        const th = document.createElement("th");
+        th.textContent = d;
+        headerRow.appendChild(th);
+    });
+
+    // Jede Antwort als Zeile
+    querySnapshot.forEach(doc => {
+        const data = doc.data();
+        const tr = document.createElement("tr");
+
+        // Name
+        const nameTd = document.createElement("td");
+        nameTd.textContent = data.name || "Unbekannt";
+        tr.appendChild(nameTd);
+
+        // Bewertungen
+        designs.forEach(d => {
+            const td = document.createElement("td");
+            td.textContent = data.ratings[d] || "-";
+            tr.appendChild(td);
+        });
+
+        tableBody.appendChild(tr);
+    });
+}
+
+// === Excel Download ===
+document.getElementById("downloadBtn").addEventListener("click", () => {
+    const table = document.getElementById("resultsTable");
+    const wb = XLSX.utils.table_to_book(table, {sheet:"Umfragen"});
+    XLSX.writeFile(wb, "Trikot_Umfrage.xlsx");
+});
+</script>
+
+</body>
+</html>
