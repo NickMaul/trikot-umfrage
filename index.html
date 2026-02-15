@@ -37,7 +37,7 @@ body {
     margin-bottom: 10px;
 }
 
-.stars { font-size: 32px; margin-bottom: 15px; }
+.stars { font-size: 32px; margin-bottom: 10px; }
 .star { color: #475569; cursor: pointer; }
 .star.selected { color: #facc15; }
 
@@ -51,6 +51,15 @@ button {
     cursor: pointer;
     background: linear-gradient(135deg, #2563eb, #1d4ed8);
     color: white;
+    margin-top: 10px;
+}
+
+.favorite-btn {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.favorite-selected {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
 }
 
 .carousel-wrapper {
@@ -74,9 +83,6 @@ button {
     position: absolute;
     top: 45%;
     font-size: 28px;
-    background: rgba(0,0,0,0);
-    padding: 8px 12px;
-    border-radius: 50%;
     pointer-events: none;
 }
 
@@ -86,7 +92,7 @@ button {
 .variant-info {
     font-size: 14px;
     color: #94a3b8;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 </style>
 </head>
@@ -97,8 +103,10 @@ button {
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp }
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { 
+    getFirestore, collection, addDoc, serverTimestamp,
+    doc, runTransaction
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "DEIN_KEY",
@@ -112,172 +120,193 @@ const firebaseConfig = {
 const appFirebase = initializeApp(firebaseConfig);
 const db = getFirestore(appFirebase);
 
-
-/* ===== DESIGNS MIT FARBVARIANTEN ===== */
+/* ===== DESIGNS ===== */
 
 const designs = [
-    {
-        name: "Design 1",
-        images: ["design5_blau.png","design5_blau_gold.png","design5_gelb_schwarz.png","design5_gruen.png","design5_gruen_schwarz.png","design5_rot.png","design5_rot_schwarz.png","design5_schwarz.png","design5_weiss.png"]
-    },
-    {
-        name: "Design 2",
-        images: ["design9_dunkelblau.png","design9_dunkelgruen.png","design9_gelb_blau.png","design9_gelb_rot.png","design9_grau_orange.png","design9_grau.png","design9_gruen.png","design9_lila.png","design9_navy_blau.png","design9_orange.png","design9_rot.png","design9_schwarz_gelb.png","design9_schwarz.png","design9_weiss_rot.png","design9_weiss.png"]
-    },
-    {
-        name: "Design 3",
-        images: ["design10_blau.png","design10_gelb.png","design10_grau.png","design10_gruen.png","design10_navy.png","design10_rot.png","design10_schwarz.png","design10_weiss.png"]
-    },
-    {
-        name: "Design 4",
-        images: ["design11_blau.png","design11_blau_gruen.png","design11_blau_rot.png","design11_dunkelgruen.png","design11_gruen.png","design11_gruen_weiss_schwarz.png","design11_navy_gold.png","design11_orange.png","design11_rosa.png","design11_rot.png","design11_rot_dunkelblau.png","design11_schwarz.png","design11_schwarz_gelb.png","design11_schwarz_pink.png","design11_weiss.png","design11_weiss_orange_blau.png"]
-    },
-    {
-        name: "Design 5",
-        images: ["design12_blau.png","design12_grau.png","design12_gruen.png","design12_hellblau.png","design12_hellgruen.png","design12_rot.png","design12_schwarz.png","design12_weiss.png"]
-    }
+{
+name: "Design 1",
+images: ["design5_blau.png","design5_blau_gold.png","design5_gelb_schwarz.png","design5_gruen.png","design5_gruen_schwarz.png","design5_rot.png","design5_rot_schwarz.png","design5_schwarz.png","design5_weiss.png"]
+},
+{
+name: "Design 2",
+images: ["design9_dunkelblau.png","design9_dunkelgruen.png","design9_gelb_blau.png","design9_gelb_rot.png","design9_grau_orange.png","design9_grau.png","design9_gruen.png","design9_lila.png","design9_navy_blau.png","design9_orange.png","design9_rot.png","design9_schwarz_gelb.png","design9_schwarz.png","design9_weiss_rot.png","design9_weiss.png"]
+},
+{
+name: "Design 3",
+images: ["design10_blau.png","design10_gelb.png","design10_grau.png","design10_gruen.png","design10_navy.png","design10_rot.png","design10_schwarz.png","design10_weiss.png"]
+},
+{
+name: "Design 4",
+images: ["design11_blau.png","design11_blau_gruen.png","design11_blau_rot.png","design11_dunkelgruen.png","design11_gruen.png","design11_gruen_weiss_schwarz.png","design11_navy_gold.png","design11_orange.png","design11_rosa.png","design11_rot.png","design11_rot_dunkelblau.png","design11_schwarz.png","design11_schwarz_gelb.png","design11_schwarz_pink.png","design11_weiss.png","design11_weiss_orange_blau.png"]
+},
+{
+name: "Design 5",
+images: ["design12_blau.png","design12_grau.png","design12_gruen.png","design12_hellblau.png","design12_hellgruen.png","design12_rot.png","design12_schwarz.png","design12_weiss.png"]
+}
 ];
 
 let currentIndex = 0;
 let currentColorIndex = 0;
 let ratings = {};
+let favorites = {};
 let userName = "";
 
 const appDiv = document.getElementById("app");
 
 showStartScreen();
 
+/* ===== START ===== */
 
 function showStartScreen(){
-    appDiv.innerHTML = `
-        <h1>Trikot Design Umfrage</h1>
-        <p>Bitte gib deinen Namen ein:</p>
-        <input id="nameInput" placeholder="Dein Name" style="padding:10px;width:100%;margin-bottom:15px;border-radius:8px;border:none;">
-        <button id="startBtn">Start</button>
-    `;
+appDiv.innerHTML = `
+<h1>Trikot Design Umfrage</h1>
+<input id="nameInput" placeholder="Dein Name" style="padding:10px;width:100%;margin-bottom:15px;border-radius:8px;border:none;">
+<button id="startBtn">Start</button>
+`;
 
-    document.getElementById("startBtn").onclick = () => {
-        const nameValue = document.getElementById("nameInput").value.trim();
-        if(!nameValue){
-            alert("Bitte Namen eingeben!");
-            return;
-        }
-        userName = nameValue;
-        showSurvey();
-    };
+document.getElementById("startBtn").onclick = () => {
+const nameValue = document.getElementById("nameInput").value.trim();
+if(!nameValue){ alert("Bitte Namen eingeben!"); return; }
+userName = nameValue;
+showSurvey();
+};
 }
 
+/* ===== SURVEY ===== */
 
 function showSurvey(){
-    appDiv.innerHTML = `
-        <h1>Trikot Design Umfrage</h1>
-        <h2 id="designTitle"></h2>
+appDiv.innerHTML = `
+<h1>Trikot Design Umfrage</h1>
+<h2 id="designTitle"></h2>
 
-        <div class="carousel-wrapper">
-            <div class="nav-zone left"></div>
-            <img id="designImage">
-            <div class="nav-zone right"></div>
-            <div class="nav-arrow left">◀</div>
-            <div class="nav-arrow right">▶</div>
-        </div>
+<div class="carousel-wrapper">
+<div class="nav-zone left"></div>
+<img id="designImage">
+<div class="nav-zone right"></div>
+<div class="nav-arrow left">◀</div>
+<div class="nav-arrow right">▶</div>
+</div>
 
-        <div class="variant-info" id="variantInfo"></div>
+<div class="variant-info" id="variantInfo"></div>
+<button id="favoriteBtn" class="favorite-btn">⭐ Diese Farbe als Favorit wählen</button>
 
-        <div class="stars" id="stars"></div>
-        <button id="mainButton">Weiter</button>
-    `;
+<div class="stars" id="stars"></div>
+<button id="mainButton">Weiter</button>
+`;
 
-    document.getElementById("mainButton").onclick = nextDesign;
-    loadDesign();
+document.getElementById("mainButton").onclick = nextDesign;
+loadDesign();
 }
-
 
 function loadDesign(){
-    const design = designs[currentIndex];
-    const image = document.getElementById("designImage");
+const design = designs[currentIndex];
+const image = document.getElementById("designImage");
+const favoriteBtn = document.getElementById("favoriteBtn");
 
-    document.getElementById("designTitle").textContent = design.name;
-    image.src = design.images[currentColorIndex];
+document.getElementById("designTitle").textContent = design.name;
+image.src = design.images[currentColorIndex];
 
-    document.getElementById("variantInfo").textContent =
-        `Farbvariante ${currentColorIndex+1} von ${design.images.length}`;
+document.getElementById("variantInfo").textContent =
+`Farbvariante ${currentColorIndex+1} von ${design.images.length}`;
 
-    /* ===== PFEILE WECHSELN NUR FARBEN ===== */
+/* Farbwechsel */
+document.querySelector(".nav-zone.left").onclick = () => {
+currentColorIndex = (currentColorIndex - 1 + design.images.length) % design.images.length;
+loadDesign();
+};
+document.querySelector(".nav-zone.right").onclick = () => {
+currentColorIndex = (currentColorIndex + 1) % design.images.length;
+loadDesign();
+};
 
-    document.querySelector(".nav-zone.left").onclick = () => {
-        currentColorIndex =
-            (currentColorIndex - 1 + design.images.length) % design.images.length;
-        loadDesign();
-    };
-
-    document.querySelector(".nav-zone.right").onclick = () => {
-        currentColorIndex =
-            (currentColorIndex + 1) % design.images.length;
-        loadDesign();
-    };
-
-    /* ===== STERNE ===== */
-
-    const starsContainer = document.getElementById("stars");
-    starsContainer.innerHTML = "";
-
-    for(let i=1;i<=5;i++){
-        const star = document.createElement("span");
-        star.innerHTML = "★";
-        star.classList.add("star");
-
-        if(ratings[design.name] >= i){
-            star.classList.add("selected");
-        }
-
-        star.onclick = () => {
-            ratings[design.name] = i;
-            loadDesign();
-        };
-
-        starsContainer.appendChild(star);
-    }
+/* Favorit setzen */
+const currentImageName = design.images[currentColorIndex].replace(".png","");
+if(favorites[design.name] === currentImageName){
+favoriteBtn.classList.add("favorite-selected");
+favoriteBtn.textContent = "✅ Favorit ausgewählt";
+}else{
+favoriteBtn.classList.remove("favorite-selected");
+favoriteBtn.textContent = "⭐ Diese Farbe als Favorit wählen";
 }
 
+favoriteBtn.onclick = () => {
+favorites[design.name] = currentImageName;
+loadDesign();
+};
+
+/* Sterne */
+const starsContainer = document.getElementById("stars");
+starsContainer.innerHTML = "";
+for(let i=1;i<=5;i++){
+const star = document.createElement("span");
+star.innerHTML = "★";
+star.classList.add("star");
+if(ratings[design.name] >= i) star.classList.add("selected");
+star.onclick = () => { ratings[design.name] = i; loadDesign(); };
+starsContainer.appendChild(star);
+}
+}
 
 function nextDesign(){
-    const currentName = designs[currentIndex].name;
-
-    if(!ratings[currentName]){
-        alert("Bitte erst bewerten!");
-        return;
-    }
-
-    if(currentIndex < designs.length - 1){
-        currentIndex++;
-        currentColorIndex = 0;
-        loadDesign();
-    } else {
-        submitSurvey();
-    }
+if(!ratings[designs[currentIndex].name]){
+alert("Bitte erst bewerten!");
+return;
 }
 
+if(currentIndex < designs.length-1){
+currentIndex++;
+currentColorIndex=0;
+loadDesign();
+}else{
+showReview();
+}
+}
+
+/* ===== REVIEW ===== */
+
+function showReview(){
+let html = `<h1>Übersicht</h1>`;
+designs.forEach(d=>{
+html += `<p><strong>${d.name}</strong><br>
+Bewertung: ${ratings[d.name]} ★<br>
+Favorit: ${favorites[d.name] || "Kein Favorit gewählt"}
+</p><hr>`;
+});
+html += `<button id="finalSubmit">Jetzt endgültig absenden</button>`;
+appDiv.innerHTML = html;
+document.getElementById("finalSubmit").onclick = submitSurvey;
+}
+
+/* ===== SUBMIT ===== */
 
 async function submitSurvey(){
 
-    await addDoc(collection(db, "umfragen"), {
-        name: userName,
-        ratings: ratings,
-        createdAt: serverTimestamp()
-    });
+await addDoc(collection(db,"umfragen"),{
+name:userName,
+ratings:ratings,
+favorites:favorites,
+createdAt:serverTimestamp()
+});
 
-    appDiv.innerHTML = `
-        <h1>Vielen Dank ${userName}!</h1>
-        <p>Deine Bewertung wurde erfolgreich gespeichert.</p>
-    `;
+/* Favoriten zählen */
+for(const designName in favorites){
+const favId = favorites[designName];
+const favRef = doc(db,"favoriten",favId);
+
+await runTransaction(db, async (transaction)=>{
+const favDoc = await transaction.get(favRef);
+if(!favDoc.exists()){
+transaction.set(favRef,{count:1});
+}else{
+transaction.update(favRef,{count:favDoc.data().count + 1});
+}
+});
+}
+
+appDiv.innerHTML = `<h1>Vielen Dank ${userName}!</h1>
+<p>Deine Bewertung wurde erfolgreich gespeichert.</p>`;
 }
 
 </script>
 </body>
 </html>
-
-
-
-
-
-
