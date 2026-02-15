@@ -35,13 +35,6 @@ body {
     padding: 10px;
     border-radius: 15px;
     margin-bottom: 10px;
-    cursor: pointer;
-}
-
-.variant-hint {
-    font-size: 14px;
-    color: #94a3b8;
-    margin-bottom: 15px;
 }
 
 .stars { font-size: 32px; margin-bottom: 15px; }
@@ -60,21 +53,9 @@ button {
     color: white;
 }
 
-.end-screen {
-    text-align: center;
-}
-
-.thank-you {
-    font-size: 24px;
-    font-weight: bold;
-}
-.subtext {
-    color: #94a3b8;
-}
-
 .carousel-wrapper {
     position: relative;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
 }
 
 .nav-zone {
@@ -102,12 +83,11 @@ button {
 .nav-arrow.left { left: 10px; }
 .nav-arrow.right { right: 10px; }
 
-.design-hint {
-    font-size: 13px;
+.variant-info {
+    font-size: 14px;
     color: #94a3b8;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
 }
-
 </style>
 </head>
 <body>
@@ -121,7 +101,7 @@ import { getFirestore, collection, addDoc, serverTimestamp }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBC_sQUOccq9MjvAyeCxtDKnjqn9AJGv-M",
+  apiKey: "DEIN_KEY",
   authDomain: "trikot-umfrage.firebaseapp.com",
   projectId: "trikot-umfrage",
   storageBucket: "trikot-umfrage.firebasestorage.app",
@@ -129,43 +109,44 @@ const firebaseConfig = {
   appId: "1:836580980136:web:ec10459578e31e6c8b199d"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const appFirebase = initializeApp(firebaseConfig);
+const db = getFirestore(appFirebase);
 
-/* ====== NUR TOP 5 DESIGNS MIT FARBVARIANTEN ====== */
+
+/* ===== DESIGNS MIT FARBVARIANTEN ===== */
 
 const designs = [
     {
         name: "Design 1",
-        images: ["design5_blau.png", "design5_blau_gold.png", "design5_gelb_schwarz.png", "design5_gruen.png", "design5_gruen_schwarz.png", "design5_rot.png", "design5_rot_schwarz.png", "design5_schwarz.png", "design5_weiss.png"]
+        images: ["design5_blau.png","design5_blau_gold.png","design5_gelb_schwarz.png","design5_gruen.png","design5_gruen_schwarz.png","design5_rot.png","design5_rot_schwarz.png","design5_schwarz.png","design5_weiss.png"]
     },
     {
         name: "Design 2",
-        images: ["design5_blau.png", "design5_blau_gold.png", "design5_gelb_schwarz.png", "design5_gruen.png", "design5_gruen_schwarz.png", "design5_rot.png", "design5_rot_schwarz.png", "design5_schwarz.png", "design5_weiss.png"]
+        images: ["design5_blau.png","design5_blau_gold.png","design5_gelb_schwarz.png","design5_gruen.png","design5_gruen_schwarz.png","design5_rot.png","design5_rot_schwarz.png","design5_schwarz.png","design5_weiss.png"]
     },
     {
         name: "Design 3",
-        images: ["design5_blau.png", "design5_blau_gold.png", "design5_gelb_schwarz.png", "design5_gruen.png", "design5_gruen_schwarz.png", "design5_rot.png", "design5_rot_schwarz.png", "design5_schwarz.png", "design5_weiss.png"]
+        images: ["design5_blau.png","design5_blau_gold.png","design5_gelb_schwarz.png","design5_gruen.png","design5_gruen_schwarz.png","design5_rot.png","design5_rot_schwarz.png","design5_schwarz.png","design5_weiss.png"]
     },
     {
         name: "Design 4",
-        images: ["design5_blau.png", "design5_blau_gold.png", "design5_gelb_schwarz.png", "design5_gruen.png", "design5_gruen_schwarz.png", "design5_rot.png", "design5_rot_schwarz.png", "design5_schwarz.png", "design5_weiss.png"]
+        images: ["design5_blau.png","design5_blau_gold.png","design5_gelb_schwarz.png","design5_gruen.png","design5_gruen_schwarz.png","design5_rot.png","design5_rot_schwarz.png","design5_schwarz.png","design5_weiss.png"]
     },
     {
         name: "Design 5",
-        images: ["design5_blau.png", "design5_blau_gold.png", "design5_gelb_schwarz.png", "design5_gruen.png", "design5_gruen_schwarz.png", "design5_rot.png", "design5_rot_schwarz.png", "design5_schwarz.png", "design5_weiss.png"]
+        images: ["design5_blau.png","design5_blau_gold.png","design5_gelb_schwarz.png","design5_gruen.png","design5_gruen_schwarz.png","design5_rot.png","design5_rot_schwarz.png","design5_schwarz.png","design5_weiss.png"]
     }
 ];
 
 let currentIndex = 0;
 let currentColorIndex = 0;
 let ratings = {};
-let reviewMode = false;
 let userName = "";
 
 const appDiv = document.getElementById("app");
 
 showStartScreen();
+
 
 function showStartScreen(){
     appDiv.innerHTML = `
@@ -186,6 +167,7 @@ function showStartScreen(){
     };
 }
 
+
 function showSurvey(){
     appDiv.innerHTML = `
         <h1>Trikot Design Umfrage</h1>
@@ -199,95 +181,66 @@ function showSurvey(){
             <div class="nav-arrow right">▶</div>
         </div>
 
-        <div class="design-hint">Links/Rechts tippen oder wischen zum Design wechseln</div>
-        <div class="variant-hint">Bild antippen um Farbvariante zu wechseln</div>
+        <div class="variant-info" id="variantInfo"></div>
 
         <div class="stars" id="stars"></div>
         <button id="mainButton">Weiter</button>
     `;
 
-    document.getElementById("mainButton").onclick = nextStep;
+    document.getElementById("mainButton").onclick = nextDesign;
     loadDesign();
 }
 
+
 function loadDesign(){
     const design = designs[currentIndex];
-    const title = document.getElementById("designTitle");
     const image = document.getElementById("designImage");
-    const starsContainer = document.getElementById("stars");
 
-    title.textContent = design.name;
+    document.getElementById("designTitle").textContent = design.name;
     image.src = design.images[currentColorIndex];
 
-    // Farbwechsel
-    image.onclick = () => {
-        currentColorIndex++;
-        if(currentColorIndex >= design.images.length){
-            currentColorIndex = 0;
-        }
-        image.src = design.images[currentColorIndex];
-    };
+    document.getElementById("variantInfo").textContent =
+        `Farbvariante ${currentColorIndex+1} von ${design.images.length}`;
 
-    // Design Wechsel per Touch-Zonen
+    /* ===== PFEILE WECHSELN NUR FARBEN ===== */
+
     document.querySelector(".nav-zone.left").onclick = () => {
-        currentIndex = (currentIndex - 1 + designs.length) % designs.length;
-        currentColorIndex = 0;
+        currentColorIndex =
+            (currentColorIndex - 1 + design.images.length) % design.images.length;
         loadDesign();
     };
 
     document.querySelector(".nav-zone.right").onclick = () => {
-        currentIndex = (currentIndex + 1) % designs.length;
-        currentColorIndex = 0;
+        currentColorIndex =
+            (currentColorIndex + 1) % design.images.length;
         loadDesign();
     };
 
-    // Swipe Support
-    let startX = 0;
+    /* ===== STERNE ===== */
 
-    image.ontouchstart = (e) => {
-        startX = e.touches[0].clientX;
-    };
-
-    image.ontouchend = (e) => {
-        let endX = e.changedTouches[0].clientX;
-        let diff = startX - endX;
-
-        if(Math.abs(diff) > 50){
-            if(diff > 0){
-                currentIndex = (currentIndex + 1) % designs.length;
-            } else {
-                currentIndex = (currentIndex - 1 + designs.length) % designs.length;
-            }
-            currentColorIndex = 0;
-            loadDesign();
-        }
-    };
-
-    // Sterne
+    const starsContainer = document.getElementById("stars");
     starsContainer.innerHTML = "";
+
     for(let i=1;i<=5;i++){
         const star = document.createElement("span");
         star.innerHTML = "★";
         star.classList.add("star");
+
         if(ratings[design.name] >= i){
             star.classList.add("selected");
         }
+
         star.onclick = () => {
             ratings[design.name] = i;
             loadDesign();
         };
-        starsContainer.appendChild(star);
-    }
 
-    if(currentIndex === designs.length - 1){
-        document.getElementById("mainButton").textContent = "Zur Übersicht";
-    } else {
-        document.getElementById("mainButton").textContent = "Weiter";
+        starsContainer.appendChild(star);
     }
 }
 
 
-function nextStep(){
+function nextDesign(){
     const currentName = designs[currentIndex].name;
 
     if(!ratings[currentName]){
@@ -297,38 +250,13 @@ function nextStep(){
 
     if(currentIndex < designs.length - 1){
         currentIndex++;
-        currentColorIndex = 0; // Farbindex zurücksetzen
+        currentColorIndex = 0;
         loadDesign();
-    } else if(!reviewMode){
-        showReview();
     } else {
         submitSurvey();
     }
 }
 
-function showReview(){
-    reviewMode = true;
-
-    let gridHTML = `
-        <h1>Übersicht deiner Bewertungen</h1>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:15px;margin-bottom:20px;">
-    `;
-
-    designs.forEach(d => {
-        gridHTML += `
-            <div style="background:#0f172a;padding:10px;border-radius:10px;">
-                <img src="${d.images[0]}" style="width:100%;height:80px;object-fit:contain;">
-                <div style="margin-top:8px;font-weight:bold;">${ratings[d.name]} ★</div>
-            </div>
-        `;
-    });
-
-    gridHTML += `</div><button id="submitBtn">Abschicken</button>`;
-
-    appDiv.innerHTML = gridHTML;
-
-    document.getElementById("submitBtn").onclick = submitSurvey;
-}
 
 async function submitSurvey(){
 
@@ -339,17 +267,11 @@ async function submitSurvey(){
     });
 
     appDiv.innerHTML = `
-        <div class="end-screen">
-            <div class="thank-you">Vielen Dank ${userName}!</div>
-            <div class="subtext">
-                Deine Bewertung wurde erfolgreich gespeichert.
-            </div>
-        </div>
+        <h1>Vielen Dank ${userName}!</h1>
+        <p>Deine Bewertung wurde erfolgreich gespeichert.</p>
     `;
 }
 
 </script>
 </body>
 </html>
-
-
