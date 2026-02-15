@@ -6,7 +6,6 @@
 <title>Trikot Umfrage</title>
 
 <style>
-/* Dein bestehendes Styling bleibt */
 body {
     font-family: 'Segoe UI', sans-serif;
     margin: 0;
@@ -35,6 +34,13 @@ body {
     background: #0f172a;
     padding: 10px;
     border-radius: 15px;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.variant-hint {
+    font-size: 14px;
+    color: #94a3b8;
     margin-bottom: 15px;
 }
 
@@ -69,15 +75,8 @@ button {
 </head>
 <body>
 
-<div class="container" id="app">
-    <h1>Trikot Design Umfrage</h1>
-    <h2 id="designTitle"></h2>
-    <img id="designImage">
-    <div class="stars" id="stars"></div>
-    <button id="mainButton">Weiter</button>
-</div>
+<div class="container" id="app"></div>
 
-<!-- Firebase SDK -->
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -85,41 +84,44 @@ import { getFirestore, collection, addDoc, serverTimestamp }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBC_sQUOccq9MjvAyeCxtDKnjqn9AJGv-M",
-  authDomain: "trikot-umfrage.firebaseapp.com",
-  projectId: "trikot-umfrage",
-  storageBucket: "trikot-umfrage.firebasestorage.app",
-  messagingSenderId: "836580980136",
-  appId: "1:836580980136:web:ec10459578e31e6c8b199d"
+  apiKey: "DEIN_API_KEY",
+  authDomain: "DEIN_AUTH_DOMAIN",
+  projectId: "DEIN_PROJECT_ID",
+  storageBucket: "DEIN_BUCKET",
+  messagingSenderId: "DEIN_SENDER_ID",
+  appId: "DEIN_APP_ID"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+/* ====== NUR TOP 5 DESIGNS MIT FARBVARIANTEN ====== */
+
 const designs = [
-    {name: "Design 1", image: "design1.png"},
-    {name: "Design 2", image: "design2.png"},
-    {name: "Design 3", image: "design3.png"},
-    {name: "Design 4", image: "design4.png"},
-    {name: "Design 5", image: "design5.png"},
-    {name: "Design 6", image: "design6.png"},
-    {name: "Design 7", image: "design7.png"},
-    {name: "Design 8", image: "design8.png"},
-    {name: "Design 9", image: "design9.png"},
-    {name: "Design 10", image: "design10.png"},
-    {name: "Design 11", image: "design11.png"},
-    {name: "Design 12", image: "design12.png"},
-    {name: "Design 13", image: "design13.png"},
-    {name: "Design 14", image: "design14.png"},
-    {name: "Design 15", image: "design15.png"},
-    {name: "Design 16", image: "design16.png"},
-    {name: "Design 17", image: "design17.png"},
-    {name: "Design 18", image: "design18.png"},
-    {name: "Design 19", image: "design19.png"},
-    {name: "Design 20", image: "design20.png"}
+    {
+        name: "Design 1",
+        images: ["design5_blau.png", "design5_blau_gold.png", "design5_gelb_schwarz.png", "design5_gruen.png", "design5_gruen_schwarz.png", "design5_rot.png", "design5_rot_schwarz.png", "design5_schwarz.png", "design5_weiss.png"]
+    },
+    {
+        name: "Design 2",
+        images: ["design5_blau.png", "design5_blau_gold.png", "design5_gelb_schwarz.png", "design5_gruen.png", "design5_gruen_schwarz.png", "design5_rot.png", "design5_rot_schwarz.png", "design5_schwarz.png", "design5_weiss.png"]
+    },
+    {
+        name: "Design 3",
+        images: ["design5_blau.png", "design5_blau_gold.png", "design5_gelb_schwarz.png", "design5_gruen.png", "design5_gruen_schwarz.png", "design5_rot.png", "design5_rot_schwarz.png", "design5_schwarz.png", "design5_weiss.png"]
+    },
+    {
+        name: "Design 4",
+        images: ["design5_blau.png", "design5_blau_gold.png", "design5_gelb_schwarz.png", "design5_gruen.png", "design5_gruen_schwarz.png", "design5_rot.png", "design5_rot_schwarz.png", "design5_schwarz.png", "design5_weiss.png"]
+    },
+    {
+        name: "Design 5",
+        images: ["design5_blau.png", "design5_blau_gold.png", "design5_gelb_schwarz.png", "design5_gruen.png", "design5_gruen_schwarz.png", "design5_rot.png", "design5_rot_schwarz.png", "design5_schwarz.png", "design5_weiss.png"]
+    }
 ];
 
 let currentIndex = 0;
+let currentColorIndex = 0;
 let ratings = {};
 let reviewMode = false;
 let userName = "";
@@ -152,6 +154,7 @@ function showSurvey(){
         <h1>Trikot Design Umfrage</h1>
         <h2 id="designTitle"></h2>
         <img id="designImage">
+        <div class="variant-hint">Bild anklicken um Farbvariante zu wechseln</div>
         <div class="stars" id="stars"></div>
         <button id="mainButton">Weiter</button>
     `;
@@ -167,7 +170,16 @@ function loadDesign(){
     const starsContainer = document.getElementById("stars");
 
     title.textContent = design.name;
-    image.src = design.image;
+    image.src = design.images[currentColorIndex];
+
+    image.onclick = () => {
+        currentColorIndex++;
+        if(currentColorIndex >= design.images.length){
+            currentColorIndex = 0;
+        }
+        image.src = design.images[currentColorIndex];
+    };
+
     starsContainer.innerHTML = "";
 
     for(let i=1;i<=5;i++){
@@ -186,6 +198,8 @@ function loadDesign(){
 
     if(currentIndex === designs.length - 1){
         document.getElementById("mainButton").textContent = "Zur Übersicht";
+    } else {
+        document.getElementById("mainButton").textContent = "Weiter";
     }
 }
 
@@ -199,6 +213,7 @@ function nextStep(){
 
     if(currentIndex < designs.length - 1){
         currentIndex++;
+        currentColorIndex = 0; // Farbindex zurücksetzen
         loadDesign();
     } else if(!reviewMode){
         showReview();
@@ -218,7 +233,7 @@ function showReview(){
     designs.forEach(d => {
         gridHTML += `
             <div style="background:#0f172a;padding:10px;border-radius:10px;">
-                <img src="${d.image}" style="width:100%;height:80px;object-fit:contain;">
+                <img src="${d.images[0]}" style="width:100%;height:80px;object-fit:contain;">
                 <div style="margin-top:8px;font-weight:bold;">${ratings[d.name]} ★</div>
             </div>
         `;
@@ -250,13 +265,5 @@ async function submitSurvey(){
 }
 
 </script>
-
-
 </body>
 </html>
-
-
-
-
-
-
