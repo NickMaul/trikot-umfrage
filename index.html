@@ -71,6 +71,43 @@ button {
 .subtext {
     color: #94a3b8;
 }
+
+.carousel-wrapper {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.nav-zone {
+    position: absolute;
+    top: 0;
+    width: 30%;
+    height: 100%;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.nav-zone.left { left: 0; }
+.nav-zone.right { right: 0; }
+
+.nav-arrow {
+    position: absolute;
+    top: 45%;
+    font-size: 28px;
+    background: rgba(0,0,0,0.5);
+    padding: 8px 12px;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.nav-arrow.left { left: 10px; }
+.nav-arrow.right { right: 10px; }
+
+.design-hint {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-bottom: 10px;
+}
+
 </style>
 </head>
 <body>
@@ -153,8 +190,18 @@ function showSurvey(){
     appDiv.innerHTML = `
         <h1>Trikot Design Umfrage</h1>
         <h2 id="designTitle"></h2>
-        <img id="designImage">
-        <div class="variant-hint">Bild anklicken um Farbvariante zu wechseln</div>
+
+        <div class="carousel-wrapper">
+            <div class="nav-zone left"></div>
+            <img id="designImage">
+            <div class="nav-zone right"></div>
+            <div class="nav-arrow left">◀</div>
+            <div class="nav-arrow right">▶</div>
+        </div>
+
+        <div class="design-hint">Links/Rechts tippen oder wischen zum Design wechseln</div>
+        <div class="variant-hint">Bild antippen um Farbvariante zu wechseln</div>
+
         <div class="stars" id="stars"></div>
         <button id="mainButton">Weiter</button>
     `;
@@ -172,6 +219,7 @@ function loadDesign(){
     title.textContent = design.name;
     image.src = design.images[currentColorIndex];
 
+    // Farbwechsel
     image.onclick = () => {
         currentColorIndex++;
         if(currentColorIndex >= design.images.length){
@@ -180,8 +228,43 @@ function loadDesign(){
         image.src = design.images[currentColorIndex];
     };
 
-    starsContainer.innerHTML = "";
+    // Design Wechsel per Touch-Zonen
+    document.querySelector(".nav-zone.left").onclick = () => {
+        currentIndex = (currentIndex - 1 + designs.length) % designs.length;
+        currentColorIndex = 0;
+        loadDesign();
+    };
 
+    document.querySelector(".nav-zone.right").onclick = () => {
+        currentIndex = (currentIndex + 1) % designs.length;
+        currentColorIndex = 0;
+        loadDesign();
+    };
+
+    // Swipe Support
+    let startX = 0;
+
+    image.ontouchstart = (e) => {
+        startX = e.touches[0].clientX;
+    };
+
+    image.ontouchend = (e) => {
+        let endX = e.changedTouches[0].clientX;
+        let diff = startX - endX;
+
+        if(Math.abs(diff) > 50){
+            if(diff > 0){
+                currentIndex = (currentIndex + 1) % designs.length;
+            } else {
+                currentIndex = (currentIndex - 1 + designs.length) % designs.length;
+            }
+            currentColorIndex = 0;
+            loadDesign();
+        }
+    };
+
+    // Sterne
+    starsContainer.innerHTML = "";
     for(let i=1;i<=5;i++){
         const star = document.createElement("span");
         star.innerHTML = "★";
@@ -202,6 +285,7 @@ function loadDesign(){
         document.getElementById("mainButton").textContent = "Weiter";
     }
 }
+
 
 function nextStep(){
     const currentName = designs[currentIndex].name;
@@ -267,4 +351,5 @@ async function submitSurvey(){
 </script>
 </body>
 </html>
+
 
