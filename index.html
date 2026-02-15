@@ -19,7 +19,7 @@ body {
 
 .container {
     width: 95%;
-    max-width: 900px;
+    max-width: 1000px;
     background: #1e293b;
     padding: 25px;
     border-radius: 20px;
@@ -37,7 +37,32 @@ body {
     margin-bottom: 10px;
 }
 
-.stars { font-size: 32px; margin-bottom: 10px; }
+.review-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(180px,1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.review-card {
+    background:#0f172a;
+    padding:10px;
+    border-radius:12px;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.review-card:hover{
+    transform:scale(1.03);
+}
+
+.review-card img{
+    width:100%;
+    height:120px;
+    object-fit:contain;
+}
+
+.stars { font-size: 28px; margin: 5px 0; }
 .star { color: #475569; cursor: pointer; }
 .star.selected { color: #facc15; }
 
@@ -219,7 +244,7 @@ currentColorIndex = (currentColorIndex + 1) % design.images.length;
 loadDesign();
 };
 
-/* Favorit setzen */
+/* Favorit */
 const currentImageName = design.images[currentColorIndex].replace(".png","");
 if(favorites[design.name] === currentImageName){
 favoriteBtn.classList.add("favorite-selected");
@@ -252,7 +277,6 @@ if(!ratings[designs[currentIndex].name]){
 alert("Bitte erst bewerten!");
 return;
 }
-
 if(currentIndex < designs.length-1){
 currentIndex++;
 currentColorIndex=0;
@@ -262,24 +286,47 @@ showReview();
 }
 }
 
-/* ===== REVIEW ===== */
+/* ===== REVIEW MIT BILDERN & ZURÜCKSPRINGEN ===== */
 
 function showReview(){
-let html = `<h1>Übersicht</h1>`;
-designs.forEach(d=>{
-html += `<p><strong>${d.name}</strong><br>
-Bewertung: ${ratings[d.name]} ★<br>
-Favorit: ${favorites[d.name] || "Kein Favorit gewählt"}
-</p><hr>`;
+let html = `<h1>Übersicht (Klick zum Bearbeiten)</h1>
+<div class="review-grid">`;
+
+designs.forEach((d,index)=>{
+const fav = favorites[d.name];
+const imgSrc = fav ? fav + ".png" : d.images[0];
+html += `
+<div class="review-card" onclick="editDesign(${index})">
+<img src="${imgSrc}">
+<div><strong>${d.name}</strong></div>
+<div>${ratings[d.name]} ★</div>
+<div style="font-size:12px;color:#94a3b8;">
+${fav ? "Favorit gesetzt" : "Kein Favorit"}
+</div>
+</div>`;
 });
-html += `<button id="finalSubmit">Jetzt endgültig absenden</button>`;
+
+html += `</div>
+<button onclick="submitSurvey()">Jetzt endgültig absenden</button>`;
+
 appDiv.innerHTML = html;
-document.getElementById("finalSubmit").onclick = submitSurvey;
+}
+
+/* Zurückspringen */
+window.editDesign = function(index){
+currentIndex = index;
+const fav = favorites[designs[index].name];
+if(fav){
+currentColorIndex = designs[index].images.findIndex(img => img.replace(".png","") === fav);
+}else{
+currentColorIndex = 0;
+}
+showSurvey();
 }
 
 /* ===== SUBMIT ===== */
 
-async function submitSurvey(){
+window.submitSurvey = async function(){
 
 await addDoc(collection(db,"umfragen"),{
 name:userName,
@@ -288,7 +335,6 @@ favorites:favorites,
 createdAt:serverTimestamp()
 });
 
-/* Favoriten zählen */
 for(const designName in favorites){
 const favId = favorites[designName];
 const favRef = doc(db,"favoriten",favId);
@@ -310,4 +356,3 @@ appDiv.innerHTML = `<h1>Vielen Dank ${userName}!</h1>
 </script>
 </body>
 </html>
-
