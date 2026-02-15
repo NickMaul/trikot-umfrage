@@ -326,45 +326,54 @@ showSurvey();
 
 /* ===== SUBMIT ===== */
 
-window.submitSurvey = async function(){
-
-  // 1️⃣ Speichern der kompletten Umfrage
-  await addDoc(collection(db,"umfragen"),{
-    name: userName,
-    ratings: ratings,
-    favorites: favorites,
-    createdAt: serverTimestamp()
-  });
-
-  // 2️⃣ Favoriten-Zähler aktualisieren
-  for(const designName in favorites){
-    const favId = favorites[designName]; // z.B. "design5_blau_gold"
-    const favRef = doc(db,"favoriten",favId); // eigene Sammlung für Zähler
-
-    await runTransaction(db, async (transaction)=>{
-      const favDoc = await transaction.get(favRef);
-      if(!favDoc.exists()){
-        transaction.set(favRef,{count:1});
-      } else {
-        transaction.update(favRef,{count: favDoc.data().count + 1});
-      }
+window.submitSurvey = async function() {
+  try {
+    // 1️⃣ Speichern der kompletten Umfrage
+    await addDoc(collection(db, "umfragen"), {
+      name: userName,
+      ratings: ratings,
+      favorites: favorites,
+      createdAt: serverTimestamp()
     });
-  }
 
-  // 3️⃣ Endscreen mit Dankesnachricht
-  appDiv.innerHTML = `
-    <h1>Vielen Dank für deine Teilnahme, ${userName}!</h1>
-    <p>Deine Bewertungen wurden erfolgreich gespeichert.</p>
-    <h2>Deine Favoriten:</h2>
-    <ul>
-      ${Object.entries(favorites).map(([design,fav])=>`<li><strong>${design}:</strong> ${fav}</li>`).join("")}
-    </ul>
-    <p>Du kannst das Fenster schließen oder die Seite neu laden, um erneut teilzunehmen.</p>
-  `;
-}
+    // 2️⃣ Favoriten im einzigen Dokument aktualisieren
+    const favDocRef = doc(db, "umfragen", "favoriten");
+    await runTransaction(db, async (transaction) => {
+      const favDoc = await transaction.get(favDocRef);
+      let data = favDoc.exists() ? favDoc.data() : {};
+
+      for (const designName in favorites) {
+        const favName = favorites[designName];
+        if (!data[designName]) data[designName] = {};
+        if (!data[designName][favName]) data[designName][favName] = 1;
+        else data[designName][favName] += 1;
+      }
+
+      if (!favDoc.exists()) transaction.set(favDocRef, data);
+      else transaction.update(favDocRef, data);
+    });
+
+    // 3️⃣ Endscreen anzeigen
+    appDiv.innerHTML = `
+      <h1>Vielen Dank für deine Teilnahme, ${userName}!</h1>
+      <p>Deine Bewertungen wurden erfolgreich gespeichert.</p>
+      <h2>Deine Favoriten:</h2>
+      <ul>
+        ${Object.entries(favorites)
+          .map(([design, fav]) => `<li><strong>${design}:</strong> ${fav}</li>`)
+          .join("")}
+      </ul>
+      <p>Du kannst das Fenster schließen oder die Seite neu laden, um erneut teilzunehmen.</p>
+    `;
+  } catch (error) {
+    console.error("Fehler beim Absenden:", error);
+    alert("Es gab einen Fehler beim Speichern. Bitte versuche es erneut.");
+  }
+};
 
 
 </script>
 </body>
 </html>
+
 
