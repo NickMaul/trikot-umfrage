@@ -357,13 +357,6 @@ window.submitSurvey = async function() {
     appDiv.innerHTML = `
       <h1>Vielen Dank für deine Teilnahme, ${userName}!</h1>
       <p>Deine Bewertungen wurden erfolgreich gespeichert.</p>
-      <h2>Deine Favoriten:</h2>
-      <ul>
-        ${Object.entries(favorites)
-          .map(([design, fav]) => `<li><strong>${design}:</strong> ${fav}</li>`)
-          .join("")}
-      </ul>
-      <p>Du kannst das Fenster schließen oder die Seite neu laden, um erneut teilzunehmen.</p>
     `;
   } catch (error) {
     console.error("Fehler beim Absenden:", error);
@@ -375,5 +368,6 @@ window.submitSurvey = async function() {
 </script>
 </body>
 </html>
+
 
 
